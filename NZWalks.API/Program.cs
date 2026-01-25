@@ -13,6 +13,9 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
+using Microsoft.AspNetCore.Diagnostics;
+using ExceptionHandlerMiddleware = NZWalks.API.Middlewares.ExceptionHandlerMiddleware;
 
 class Program
 {
@@ -22,7 +25,14 @@ class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        var logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.File("Logs/NZWalks_log.txt", rollingInterval: RollingInterval.Minute)
+            .MinimumLevel.Information()
+            .CreateLogger();
 
+        builder.Logging.ClearProviders();
+        builder.Logging.AddSerilog(logger);
         builder.Services.AddControllers();
         builder.Services.AddHttpContextAccessor();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -109,6 +119,7 @@ class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+        app.UseMiddleware<ExceptionHandlerMiddleware>();
 
         app.UseHttpsRedirection();
         //serving static files like images
